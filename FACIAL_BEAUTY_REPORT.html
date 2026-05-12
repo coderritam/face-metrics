@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PX Face Metrics | AI Facial Analysis</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#1e3a8a', // Deep Blue
+                        secondary: '#3b82f6',
+                        surface: '#f8fafc',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+        }
+        .progress-bar-fill {
+            transition: width 1s ease-in-out;
+        }
+        
+        /* Custom Watermark Styles */
+        .watermark-badge {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            border: 1px solid #e2e8f0;
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            z-index: 50;
+            font-size: 0.75rem;
+            color: #475569;
+            transition: transform 0.3s ease;
+        }
+        .watermark-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .watermark-name {
+            font-weight: 700;
+            color: #0f172a;
+            letter-spacing: 0.05em;
+        }
+        .watermark-link {
+            color: #3b82f6;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin: 4px 0;
+        }
+        .watermark-footer {
+            font-style: italic;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Hide scrollbar for clean UI */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 font-sans antialiased">
+
+    <!-- Error/Message Toast -->
+    <div id="toast-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 hidden transition-opacity duration-300">
+        <div class="bg-red-600 text-white px-6 py-3 rounded-full shadow-lg font-medium flex items-center gap-2">
+            <i data-lucide="alert-circle" class="w-5 h-5"></i>
+            <span id="toast-message">Error message</span>
+        </div>
+    </div>
+
+    <!-- Custom Watermark -->
+    <div class="watermark-badge">
+        <div class="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Built By</div>
+        <div class="watermark-name">RITAM MALLIK</div>
+        <a href="https://linkedin.com/in/ritam-mallik" target="_blank" class="watermark-link">
+            <i data-lucide="linkedin" class="w-3 h-3"></i> linkedin.com/in/ritam-mallik
+        </a>
+        <div class="watermark-footer mt-2 border-t border-slate-200 pt-2">
+            <i data-lucide="sparkles" class="w-3 h-3 text-amber-500"></i> Designed with Gemini
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+                    <i data-lucide="scan-face" class="w-8 h-8 text-primary"></i>
+                    FACIAL BEAUTY REPORT
+                </h1>
+                <p class="text-slate-500 uppercase tracking-widest text-sm font-semibold mt-1">AI-Powered Facial Analysis</p>
+            </div>
+            <div class="bg-primary text-white px-4 py-2 rounded-lg shadow-sm text-sm font-medium flex items-center gap-2">
+                <i data-lucide="calendar" class="w-4 h-4"></i>
+                <span id="current-date"></span>
+            </div>
+        </header>
+
+        <!-- Main Upload View (Initial State) -->
+        <div id="upload-view" class="glass-panel rounded-3xl p-8 md:p-16 flex flex-col items-center justify-center text-center border-dashed border-2 border-slate-300 min-h-[60vh]">
+            <div class="bg-blue-50 p-6 rounded-full mb-6">
+                <i data-lucide="camera" class="w-12 h-12 text-blue-500"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Upload a Portrait Photo</h2>
+            <p class="text-slate-500 max-w-md mb-8">For the best results, use a clear, front-facing photo with good lighting and a neutral expression.</p>
+            
+            <input type="file" id="image-upload" accept="image/*" class="hidden">
+            <label for="image-upload" class="bg-primary hover:bg-blue-800 text-white px-8 py-4 rounded-xl font-semibold transition-colors cursor-pointer shadow-lg shadow-blue-500/30 flex items-center gap-2">
+                <i data-lucide="upload" class="w-5 h-5"></i>
+                Select Photo to Analyze
+            </label>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-view" class="hidden glass-panel rounded-3xl p-12 flex flex-col items-center justify-center min-h-[60vh]">
+            <div class="relative w-24 h-24 mb-6">
+                <div class="absolute inset-0 border-4 border-slate-200 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-primary rounded-full border-t-transparent animate-spin"></div>
+                <i data-lucide="brain-circuit" class="absolute inset-0 m-auto w-8 h-8 text-primary animate-pulse"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">AI is analyzing your features...</h3>
+            <p class="text-slate-500">Calculating symmetry, proportions, and generating insights.</p>
+        </div>
+
+        <!-- Report View (Hidden initially) -->
+        <div id="report-view" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Sidebar: Basic Info & Image -->
+            <div class="lg:col-span-4 space-y-6">
+                <!-- User Image -->
+                <div class="glass-panel rounded-2xl overflow-hidden shadow-sm">
+                    <img id="user-image-preview" src="" alt="Analyzed Face" class="w-full h-auto object-cover aspect-[4/5]">
+                </div>
+
+                <!-- Basic Information -->
+                <div class="glass-panel rounded-2xl p-6 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <i data-lucide="user" class="w-4 h-4"></i> Basic Information
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                            <span class="text-slate-600 flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-slate-400"></i> Gender</span>
+                            <span class="font-semibold text-slate-900" id="res-gender">-</span>
+                        </div>
+                        <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                            <span class="text-slate-600 flex items-center gap-2"><i data-lucide="calendar-days" class="w-4 h-4 text-slate-400"></i> Apparent Age</span>
+                            <span class="font-semibold text-slate-900" id="res-age">-</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600 flex items-center gap-2"><i data-lucide="scan" class="w-4 h-4 text-slate-400"></i> Face Shape</span>
+                            <span class="font-semibold text-slate-900" id="res-shape">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Main Content: Scores & Analysis -->
+            <div class="lg:col-span-8 space-y-6">
+                
+                <!-- Top Score Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <!-- Overall Score -->
+                    <div class="glass-panel rounded-2xl p-6 shadow-sm flex flex-col justify-center">
+                        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Overall Score</h3>
+                        <div class="flex items-end gap-2 mb-2">
+                            <span class="text-6xl font-bold text-primary leading-none" id="res-overall-score">0.0</span>
+                            <span class="text-2xl text-slate-400 font-medium pb-1">/ 10</span>
+                        </div>
+                        <p class="text-slate-500 text-sm mt-2">Overall facial harmony based on AI algorithmic assessment.</p>
+                    </div>
+
+                    <!-- Percentile -->
+                    <div class="glass-panel rounded-2xl p-6 shadow-sm flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Percentile</h3>
+                            <p class="text-slate-500 text-sm max-w-[150px]">Your score compared to the general database.</p>
+                        </div>
+                        <div class="relative w-32 h-32 flex-shrink-0">
+                            <svg class="w-full h-full transform -rotate-90">
+                                <circle cx="64" cy="64" r="54" stroke="currentColor" stroke-width="12" fill="transparent" class="text-slate-100" />
+                                <circle id="percentile-circle" cx="64" cy="64" r="54" stroke="currentColor" stroke-width="12" fill="transparent" stroke-dasharray="339.292" stroke-dashoffset="339.292" class="text-blue-500 transition-all duration-1500 ease-out" stroke-linecap="round" />
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center flex-col">
+                                <span class="text-3xl font-bold text-slate-800"><span id="res-percentile">0</span>%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Analysis -->
+                <div class="glass-panel rounded-2xl p-6 md:p-8 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6 flex items-center gap-2">
+                        <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Detailed Analysis
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-5" id="detailed-metrics-container">
+                        <!-- Metrics injected by JS -->
+                    </div>
+                </div>
+
+                <!-- Strengths & Improvements -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div class="bg-emerald-50/80 border border-emerald-100 rounded-2xl p-6">
+                        <h3 class="text-emerald-800 font-bold mb-4 flex items-center gap-2">
+                            <i data-lucide="star" class="w-5 h-5 text-emerald-500"></i> Key Strengths
+                        </h3>
+                        <ul id="res-strengths" class="space-y-3">
+                            <!-- Injected by JS -->
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-amber-50/80 border border-amber-100 rounded-2xl p-6">
+                        <h3 class="text-amber-800 font-bold mb-4 flex items-center gap-2">
+                            <i data-lucide="target" class="w-5 h-5 text-amber-500"></i> Areas for Improvement
+                        </h3>
+                        <ul id="res-improvements" class="space-y-3">
+                            <!-- Injected by JS -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Grooming & Style Tips -->
+                <div class="glass-panel rounded-2xl p-6 md:p-8 shadow-sm border-t-4 border-t-primary mt-8">
+                    <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6 flex items-center gap-2">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-primary"></i> Grooming & Style Tips
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div>
+                            <h4 class="font-bold text-slate-800 mb-3 flex items-center gap-2"><i data-lucide="scissors" class="w-4 h-4 text-slate-500"></i> Hair</h4>
+                            <ul id="res-tips-hair" class="text-sm text-slate-600 space-y-2 list-disc pl-4 marker:text-slate-300"></ul>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-800 mb-3 flex items-center gap-2"><i data-lucide="user-circle" class="w-4 h-4 text-slate-500"></i> Facial Hair</h4>
+                            <ul id="res-tips-beard" class="text-sm text-slate-600 space-y-2 list-disc pl-4 marker:text-slate-300"></ul>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-800 mb-3 flex items-center gap-2"><i data-lucide="droplet" class="w-4 h-4 text-slate-500"></i> Skincare</h4>
+                            <ul id="res-tips-skincare" class="text-sm text-slate-600 space-y-2 list-disc pl-4 marker:text-slate-300"></ul>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-800 mb-3 flex items-center gap-2"><i data-lucide="shirt" class="w-4 h-4 text-slate-500"></i> Outfits</h4>
+                            <ul id="res-tips-outfits" class="text-sm text-slate-600 space-y-2 list-disc pl-4 marker:text-slate-300"></ul>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 pt-6 border-t border-slate-100 flex items-center gap-3 text-sm text-slate-500 italic">
+                        <i data-lucide="info" class="w-5 h-5 text-blue-400 flex-shrink-0"></i>
+                        <p>Beauty is subjective and unique to everyone. This analysis is based on algorithmic visual harmony. Confidence is always your best feature!</p>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex justify-end gap-4 mt-8 pb-12">
+                    <button onclick="resetApp()" class="px-6 py-3 rounded-xl font-semibold text-slate-600 bg-slate-200 hover:bg-slate-300 transition-colors">
+                        Analyze Another Photo
+                    </button>
+                    <button onclick="window.print()" class="px-6 py-3 rounded-xl font-semibold text-white bg-primary hover:bg-blue-800 transition-colors flex items-center gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i> Save Report
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Icons & Date
+        lucide.createIcons();
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+        // --- Configuration ---
+        // The API key is provided by the environment during execution.
+        const apiKey = "AIzaSyDeR0MTtAe1KBHWu4IarWk16ZawsuMGIs4"; 
+        
+        // --- State Management ---
+        const views = {
+            upload: document.getElementById('upload-view'),
+            loading: document.getElementById('loading-view'),
+            report: document.getElementById('report-view')
+        };
+
+        function showView(viewName) {
+            Object.values(views).forEach(v => v.classList.add('hidden'));
+            views[viewName].classList.remove('hidden');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast-container');
+            document.getElementById('toast-message').textContent = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 5000);
+        }
+
+        function resetApp() {
+            document.getElementById('image-upload').value = '';
+            showView('upload');
+            window.scrollTo(0, 0);
+        }
+
+        // --- File Upload Handling ---
+        document.getElementById('image-upload').addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Preview Image
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const base64Image = e.target.result;
+                document.getElementById('user-image-preview').src = base64Image;
+                
+                showView('loading');
+                
+                // Extract base64 data without prefix for Gemini
+                const base64Data = base64Image.split(',')[1];
+                const mimeType = file.type;
+
+                try {
+                    await analyzeFaceWithAI(base64Data, mimeType);
+                } catch (error) {
+                    console.error(error);
+                    showToast("Analysis failed. Please try a different photo or check your connection.");
+                    showView('upload');
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // --- AI API Integration ---
+        async function analyzeFaceWithAI(base64Data, mimeType) {
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            
+            const prompt = `Act as an expert facial metric analyst and beauty consultant. Analyze this face and generate a structured report. 
+            Assess harmony, symmetry, and features. Be realistic, objective, but constructive and polite. Scores must be decimal values between 1.0 and 10.0.
+            Return ONLY a valid JSON object matching exactly this structure:
+            {
+                "gender": "String (e.g., Male/Female)",
+                "apparent_age": "String (e.g., 20-25 years)",
+                "face_shape": "String (e.g., Diamond, Oval, Square)",
+                "overall_score": Number (e.g., 7.8),
+                "percentile": Number (integer, e.g., 78),
+                "detailed_analysis": {
+                    "Facial Symmetry": Number,
+                    "Proportions": Number,
+                    "Bone Structure": Number,
+                    "Skin Quality": Number,
+                    "Eyes": Number,
+                    "Eyebrows": Number,
+                    "Nose": Number,
+                    "Lips": Number,
+                    "Jawline": Number,
+                    "Overall Harmony": Number
+                },
+                "strengths": ["String array of 4-5 points"],
+                "improvements": ["String array of 3-4 gentle improvement areas"],
+                "grooming_tips": {
+                    "hair": ["String array of 2-3 specific style tips"],
+                    "beard": ["String array of 2-3 facial hair/makeup tips"],
+                    "skincare": ["String array of 2-3 skincare tips"],
+                    "outfits": ["String array of 2-3 fashion tips based on features"]
+                }
+            }`;
+
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        { inlineData: { mimeType: mimeType, data: base64Data } }
+                    ]
+                }],
+                generationConfig: {
+                    responseMimeType: "application/json"
+                }
+            };
+
+            // Implement basic backoff/retry
+            let retries = 3;
+            while(retries > 0) {
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) throw new Error('API Error');
+
+                    const data = await response.json();
+                    const textResult = data.candidates[0].content.parts[0].text;
+                    const jsonResult = JSON.parse(textResult);
+                    
+                    populateReport(jsonResult);
+                    showView('report');
+                    return;
+
+                } catch (error) {
+                    retries--;
+                    if(retries === 0) throw error;
+                    await new Promise(r => setTimeout(r, 2000)); // wait 2s before retry
+                }
+            }
+        }
+
+        // --- Render UI ---
+        function populateReport(data) {
+            // Basic Info
+            document.getElementById('res-gender').textContent = data.gender;
+            document.getElementById('res-age').textContent = data.apparent_age;
+            document.getElementById('res-shape').textContent = data.face_shape;
+            
+            // Overall Score
+            document.getElementById('res-overall-score').textContent = data.overall_score.toFixed(1);
+            
+            // Percentile Animation
+            const percentileElem = document.getElementById('res-percentile');
+            percentileElem.textContent = "0";
+            setTimeout(() => {
+                animateValue(percentileElem, 0, data.percentile, 1500);
+                // Animate SVG Circle
+                const circle = document.getElementById('percentile-circle');
+                const circumference = 339.292; // 2 * pi * r (54)
+                const offset = circumference - (data.percentile / 100) * circumference;
+                circle.style.strokeDashoffset = offset;
+            }, 100);
+
+            // Detailed Metrics
+            const metricsContainer = document.getElementById('detailed-metrics-container');
+            metricsContainer.innerHTML = '';
+            
+            for (const [key, value] of Object.entries(data.detailed_analysis)) {
+                const percentage = (value / 10) * 100;
+                const metricHTML = `
+                    <div class="flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="font-medium text-slate-700">${key}</span>
+                            <span class="font-bold text-slate-900">${value.toFixed(1)} <span class="text-slate-400 font-normal text-xs">/ 10</span></span>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                            <div class="bg-primary h-2 rounded-full progress-bar-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                `;
+                metricsContainer.insertAdjacentHTML('beforeend', metricHTML);
+            }
+
+            // Animate bars after rendering
+            setTimeout(() => {
+                const bars = metricsContainer.querySelectorAll('.progress-bar-fill');
+                let i = 0;
+                for (const [key, value] of Object.entries(data.detailed_analysis)) {
+                    bars[i].style.width = `${(value / 10) * 100}%`;
+                    i++;
+                }
+            }, 100);
+
+            // Lists rendering helper
+            const renderList = (elementId, items, iconClass, iconName) => {
+                const el = document.getElementById(elementId);
+                el.innerHTML = '';
+                items.forEach(item => {
+                    el.insertAdjacentHTML('beforeend', `
+                        <li class="flex items-start gap-2 text-sm text-slate-700">
+                            <i data-lucide="${iconName}" class="w-4 h-4 mt-0.5 flex-shrink-0 ${iconClass}"></i>
+                            <span>${item}</span>
+                        </li>
+                    `);
+                });
+            };
+
+            renderList('res-strengths', data.strengths, 'text-emerald-500', 'check-circle-2');
+            renderList('res-improvements', data.improvements, 'text-amber-500', 'arrow-up-circle');
+
+            // Simple unordered lists for tips
+            const renderSimpleList = (elementId, items) => {
+                const el = document.getElementById(elementId);
+                el.innerHTML = '';
+                items.forEach(item => {
+                    el.insertAdjacentHTML('beforeend', `<li>${item}</li>`);
+                });
+            };
+
+            renderSimpleList('res-tips-hair', data.grooming_tips.hair);
+            renderSimpleList('res-tips-beard', data.grooming_tips.beard);
+            renderSimpleList('res-tips-skincare', data.grooming_tips.skincare);
+            renderSimpleList('res-tips-outfits', data.grooming_tips.outfits);
+
+            // Re-initialize icons for newly added HTML
+            lucide.createIcons();
+        }
+
+        // Helper for number counting animation
+        function animateValue(obj, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+    </script>
+</body>
+</html>
