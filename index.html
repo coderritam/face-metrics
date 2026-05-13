@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,11 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PX Face Metrics | AI Facial Analysis</title>
     <!-- Tailwind CSS for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap)" rel="stylesheet">
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="[https://unpkg.com/lucide@latest](https://unpkg.com/lucide@latest)"></script>
     
     <script>
         tailwind.config = {
@@ -110,8 +111,8 @@
     <div class="watermark-badge">
         <div class="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Built By</div>
         <div class="watermark-name">RITAM MALLIK</div>
-        <a href="https://linkedin.com/in/ritam-mallik" target="_blank" class="watermark-link">
-            <i data-lucide="linkedin" class="w-3 h-3"></i> linkedin.com/in/ritam-mallik
+        <a href="[https://linkedin.com/in/ritam-mallik](https://linkedin.com/in/ritam-mallik)" target="_blank" class="watermark-link">
+            <i data-lucide="linkedin" class="w-3 h-3"></i> [linkedin.com/in/ritam-mallik](https://linkedin.com/in/ritam-mallik)
         </a>
         <div class="watermark-footer mt-2 border-t border-slate-200 pt-2">
             <i data-lucide="sparkles" class="w-3 h-3 text-amber-500"></i> Designed with Gemini
@@ -303,13 +304,13 @@
     </div>
 
     <script>
-        // Initialize Icons & Date
+        // Icons ebong Date initialize kora hocche
         lucide.createIcons();
         document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
         // --- Configuration ---
-        // The API key is provided by the environment during execution.
-        const apiKey = "AIzaSyDeR0MTtAe1KBHWu4IarWk16ZawsuMGIs4"; 
+        // Apnar notun API Key ekhane bosan (old key ta delete kore deben Google Studio theke)
+        const apiKey = ""; 
         
         // --- State Management ---
         const views = {
@@ -343,7 +344,7 @@
             const file = event.target.files[0];
             if (!file) return;
 
-            // Preview Image
+            // Image Preview kora
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const base64Image = e.target.result;
@@ -351,15 +352,15 @@
                 
                 showView('loading');
                 
-                // Extract base64 data without prefix for Gemini
+                // Gemini API er jonno Base64 data extract kora
                 const base64Data = base64Image.split(',')[1];
                 const mimeType = file.type;
 
                 try {
                     await analyzeFaceWithAI(base64Data, mimeType);
                 } catch (error) {
-                    console.error(error);
-                    showToast("Analysis failed. Please try a different photo or check your connection.");
+                    console.error("Error details:", error);
+                    showToast("Analysis failed: " + error.message);
                     showView('upload');
                 }
             };
@@ -368,6 +369,7 @@
 
         // --- AI API Integration ---
         async function analyzeFaceWithAI(base64Data, mimeType) {
+            // EKHANE MODEL UPDATE KORA HOYECHE: gemini-2.5-flash
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
             
             const prompt = `Act as an expert facial metric analyst and beauty consultant. Analyze this face and generate a structured report. 
@@ -381,167 +383,4 @@
                 "percentile": Number (integer, e.g., 78),
                 "detailed_analysis": {
                     "Facial Symmetry": Number,
-                    "Proportions": Number,
-                    "Bone Structure": Number,
-                    "Skin Quality": Number,
-                    "Eyes": Number,
-                    "Eyebrows": Number,
-                    "Nose": Number,
-                    "Lips": Number,
-                    "Jawline": Number,
-                    "Overall Harmony": Number
-                },
-                "strengths": ["String array of 4-5 points"],
-                "improvements": ["String array of 3-4 gentle improvement areas"],
-                "grooming_tips": {
-                    "hair": ["String array of 2-3 specific style tips"],
-                    "beard": ["String array of 2-3 facial hair/makeup tips"],
-                    "skincare": ["String array of 2-3 skincare tips"],
-                    "outfits": ["String array of 2-3 fashion tips based on features"]
-                }
-            }`;
-
-            const payload = {
-                contents: [{
-                    parts: [
-                        { text: prompt },
-                        { inlineData: { mimeType: mimeType, data: base64Data } }
-                    ]
-                }],
-                generationConfig: {
-                    responseMimeType: "application/json"
-                }
-            };
-
-            // Implement basic backoff/retry
-            let retries = 3;
-            while(retries > 0) {
-                try {
-                    const response = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) throw new Error('API Error');
-
-                    const data = await response.json();
-                    const textResult = data.candidates[0].content.parts[0].text;
-                    const jsonResult = JSON.parse(textResult);
-                    
-                    populateReport(jsonResult);
-                    showView('report');
-                    return;
-
-                } catch (error) {
-                    retries--;
-                    if(retries === 0) throw error;
-                    await new Promise(r => setTimeout(r, 2000)); // wait 2s before retry
-                }
-            }
-        }
-
-        // --- Render UI ---
-        function populateReport(data) {
-            // Basic Info
-            document.getElementById('res-gender').textContent = data.gender;
-            document.getElementById('res-age').textContent = data.apparent_age;
-            document.getElementById('res-shape').textContent = data.face_shape;
-            
-            // Overall Score
-            document.getElementById('res-overall-score').textContent = data.overall_score.toFixed(1);
-            
-            // Percentile Animation
-            const percentileElem = document.getElementById('res-percentile');
-            percentileElem.textContent = "0";
-            setTimeout(() => {
-                animateValue(percentileElem, 0, data.percentile, 1500);
-                // Animate SVG Circle
-                const circle = document.getElementById('percentile-circle');
-                const circumference = 339.292; // 2 * pi * r (54)
-                const offset = circumference - (data.percentile / 100) * circumference;
-                circle.style.strokeDashoffset = offset;
-            }, 100);
-
-            // Detailed Metrics
-            const metricsContainer = document.getElementById('detailed-metrics-container');
-            metricsContainer.innerHTML = '';
-            
-            for (const [key, value] of Object.entries(data.detailed_analysis)) {
-                const percentage = (value / 10) * 100;
-                const metricHTML = `
-                    <div class="flex flex-col gap-1.5">
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="font-medium text-slate-700">${key}</span>
-                            <span class="font-bold text-slate-900">${value.toFixed(1)} <span class="text-slate-400 font-normal text-xs">/ 10</span></span>
-                        </div>
-                        <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                            <div class="bg-primary h-2 rounded-full progress-bar-fill" style="width: 0%"></div>
-                        </div>
-                    </div>
-                `;
-                metricsContainer.insertAdjacentHTML('beforeend', metricHTML);
-            }
-
-            // Animate bars after rendering
-            setTimeout(() => {
-                const bars = metricsContainer.querySelectorAll('.progress-bar-fill');
-                let i = 0;
-                for (const [key, value] of Object.entries(data.detailed_analysis)) {
-                    bars[i].style.width = `${(value / 10) * 100}%`;
-                    i++;
-                }
-            }, 100);
-
-            // Lists rendering helper
-            const renderList = (elementId, items, iconClass, iconName) => {
-                const el = document.getElementById(elementId);
-                el.innerHTML = '';
-                items.forEach(item => {
-                    el.insertAdjacentHTML('beforeend', `
-                        <li class="flex items-start gap-2 text-sm text-slate-700">
-                            <i data-lucide="${iconName}" class="w-4 h-4 mt-0.5 flex-shrink-0 ${iconClass}"></i>
-                            <span>${item}</span>
-                        </li>
-                    `);
-                });
-            };
-
-            renderList('res-strengths', data.strengths, 'text-emerald-500', 'check-circle-2');
-            renderList('res-improvements', data.improvements, 'text-amber-500', 'arrow-up-circle');
-
-            // Simple unordered lists for tips
-            const renderSimpleList = (elementId, items) => {
-                const el = document.getElementById(elementId);
-                el.innerHTML = '';
-                items.forEach(item => {
-                    el.insertAdjacentHTML('beforeend', `<li>${item}</li>`);
-                });
-            };
-
-            renderSimpleList('res-tips-hair', data.grooming_tips.hair);
-            renderSimpleList('res-tips-beard', data.grooming_tips.beard);
-            renderSimpleList('res-tips-skincare', data.grooming_tips.skincare);
-            renderSimpleList('res-tips-outfits', data.grooming_tips.outfits);
-
-            // Re-initialize icons for newly added HTML
-            lucide.createIcons();
-        }
-
-        // Helper for number counting animation
-        function animateValue(obj, start, end, duration) {
-            let startTimestamp = null;
-            const step = (timestamp) => {
-                if (!startTimestamp) startTimestamp = timestamp;
-                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                obj.innerHTML = Math.floor(progress * (end - start) + start);
-                if (progress < 1) {
-                    window.requestAnimationFrame(step);
-                }
-            };
-            window.requestAnimationFrame(step);
-        }
-
-    </script>
-</body>
-</html>
+    
