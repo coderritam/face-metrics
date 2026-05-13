@@ -368,7 +368,7 @@
 
         // --- AI API Integration ---
         async function analyzeFaceWithAI(base64Data, mimeType) {
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
             
             const prompt = `Act as an expert facial metric analyst and beauty consultant. Analyze this face and generate a structured report. 
             Assess harmony, symmetry, and features. Be realistic, objective, but constructive and polite. Scores must be decimal values between 1.0 and 10.0.
